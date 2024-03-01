@@ -1,0 +1,26 @@
+.carousel {
+  width: 100%;
+  overflow: hidden;
+  transition: opacity 0.3s ease-out;
+  position: relative;
+}
+
+.carouselContentInner {
+  position: relative;
+}
+
+.carouselContentInner {
+  display: flex;
+}
+
+.carouselItem {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.fit {
+  .carouselItem {
+    width: unset;
+    flex-shrink: unset;
+  }
+}
