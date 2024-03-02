@@ -1,6 +1,6 @@
-<script>
+<script lang="ts">
   import { getContext } from 'svelte';
-
+  import type { IContext } from './helpers';
   import style from './style.module.css';
   const ctx = getContext('microcarouselData');
 
@@ -10,8 +10,6 @@
 
   const {
     currentOffset,
-    totalSlides,
-    currentSlide,
     gap,
     mouseDownHandler,
     mouseUpHandler,
@@ -20,7 +18,7 @@
     touchMoveHandler,
     touchEndHandler,
     touchCancelHandler,
-  } = ctx;
+  } = ctx as IContext;
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->

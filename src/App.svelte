@@ -52,16 +52,16 @@
   </Carousel>
 
   <div style="position: relative;">
-    <h2>Dynamic slide width</h2>
+    <h2>Different slide width</h2>
     <div>
       <div class="ruler" />
-      <Carousel itemsGap={16} centerSlide slidesPerView="fit">
+      <Carousel itemsGap={16} centerSlide>
         <MoveButton moveNumber={-1} class="left">L</MoveButton>
         <MoveButton moveNumber={1} class="right">R</MoveButton>
 
         <CarouselContent>
           {#each colors as c, i}
-            <CarouselItem>
+            <CarouselItem maxWidth={100 * (i + 2)}>
               <div class="slide" style="background: {c}; width: 100%;">
                 <Counter />
               </div>
