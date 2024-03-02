@@ -3,6 +3,9 @@
 
   import style from './style.module.css';
   import type { Writable } from 'svelte/store';
+
+  let max = 300;
+
   const ctx = getContext('microcarouselData');
 
   if (!ctx) {
@@ -19,18 +22,15 @@
 
   let myRef: HTMLElement;
 
+  const getW = () => {
+    if (!myRef || !myRef.parentNode) return;
+    const myIndex = Array.from(myRef.parentNode.children).indexOf(myRef);
+    const { width } = myRef.getBoundingClientRect();
+    $childSizes[myIndex] = width;
+  };
+
   onMount(() => {
-    const getW = () => {
-      if (!myRef || !myRef.parentNode) return;
-
-      const myIndex = Array.from(myRef.parentNode.children).indexOf(myRef);
-
-      const { width } = myRef.getBoundingClientRect();
-      $childSizes[myIndex] = width;
-    };
-
     getW();
-
     addEventListener('resize', getW);
   });
 </script>
@@ -38,10 +38,7 @@
 <div
   bind:this={myRef}
   class={style.carouselItem}
-  style="max-width: {$carouselWidth}px; oveflow: hidden; {$slideWidth
-    ? `width:${$slideWidth}px;`
-    : ''}"
+  style="oveflow: hidden; {$slideWidth ? `width:${$slideWidth}px;` : ''}"
 >
-  {$carouselWidth}
   <slot />
 </div>

@@ -72,11 +72,10 @@
   carouselWidth.subscribe(refreshSlidePositions);
 
   const updateSlideWidth = () => {
-    if (!$carouselWidth || slidesPerView === 'fit') return;
-
-    const gaps = itemsGap * (Math.ceil(slidesPerView) - 1);
-
-    slideWidth.set(($carouselWidth - gaps) / slidesPerView);
+    if (!$carouselWidth) return;
+    const spv = slidesPerView === 'fit' ? 1 : slidesPerView;
+    const gaps = itemsGap * (Math.ceil(spv) - 1);
+    slideWidth.set(($carouselWidth - gaps) / spv);
   };
 
   carouselWidth.subscribe(updateSlideWidth);

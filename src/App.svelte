@@ -62,10 +62,7 @@
         <CarouselContent>
           {#each colors as c, i}
             <CarouselItem>
-              <div
-                class="slide"
-                style="background: {c}; width: {100 + 100 * i}px"
-              >
+              <div class="slide" style="background: {c}; width: 100%;">
                 <Counter />
               </div>
             </CarouselItem>
