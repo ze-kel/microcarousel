@@ -17,10 +17,3 @@
   width: 100%;
   flex-shrink: 0;
 }
-
-.fit2 {
-  .carouselItem {
-    width: unset;
-    flex-shrink: unset;
-  }
-}

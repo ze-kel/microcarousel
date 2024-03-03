@@ -4,16 +4,16 @@
   import { writable } from 'svelte/store';
   import { tweened } from 'svelte/motion';
   import { cubicOut } from 'svelte/easing';
-  import { _clamp, wrapAround, type IContext } from './helpers';
+  import { _clamp, wrapAround, type IContext, type SlideInfo } from './helpers';
 
   const TRANSITION_MS = 300;
 
-  export let showDebug = true;
+  export let showDebug = false;
   export let itemsGap = 0;
   export let slidesPerView = 1;
   export let centerSlide = false;
   export let fadeOnMount = true;
-  export let loop = true;
+  export let loop = false;
 
   let isMounted = !fadeOnMount;
 
@@ -58,13 +58,6 @@
   };
 
   carouselWidth.subscribe(updateSlideWidth);
-
-  type SlideInfo = {
-    offset: number;
-    start: number;
-    end: number;
-    width: number;
-  };
 
   // Calculates info about start\end(in offset values and width
   const slidesInfo = writable<SlideInfo[]>([]);
@@ -118,19 +111,13 @@
     } else {
       // Case where we want to set slide to -1 or +1 from the end
       const wrapped = wrapAround(n, 0, $totalSlides - 1);
-
-      // Looping is handled by positioning last slide before first on when needed and so on
-      // So to go from last slide to first we immediatelly jump to -1 slide, which is repositioned last and then transition to first real one
-      const currentWrapped = wrapped - (n - $currentSlide);
-      currentSlide.set(currentWrapped);
-      updateOffsetFromCurrentSlide(true);
       currentSlide.set(wrapped);
     }
     updateOffsetFromCurrentSlide(false);
   };
 
   // Number of pixels we move out slides
-  const currentOffset = tweened<number>(undefined, {
+  const currentOffset = tweened<number>(0, {
     easing: cubicOut,
     duration: TRANSITION_MS,
   });
@@ -141,21 +128,30 @@
     // Again we wrap "fake" slides to real ones
     const wrapped = wrapAround($currentSlide, 0, $totalSlides - 1);
 
-    // Calculate how much do we need to offset
-    const extra =
-      $currentSlide < 0
-        ? -$totalSize
-        : $currentSlide > $totalSlides - 1
-        ? $totalSize
-        : 0;
-
-    const off = $slidesInfo[wrapped].offset + extra;
+    const current = $currentOffset;
+    const target = $slidesInfo[wrapped].offset;
 
     if (immeditate) {
-      currentOffset.set(off, { duration: 0 });
-    } else {
-      currentOffset.set(off);
+      currentOffset.set(target, { duration: 0 });
     }
+
+    // Direct, through 0, through $totalSize
+    const possibleMoves = [
+      [current, target],
+      [wrapAround(current, 0, $totalSize), target],
+      [0 - ($totalSize - current), target],
+    ];
+
+    const shortestMoveIndex = possibleMoves.reduce((a, b, index, arr) => {
+      const aR = Math.abs(arr[a][0] - arr[a][1]);
+      const bR = Math.abs(arr[index][0] - arr[index][1]);
+      return aR < bR ? a : index;
+    }, 0);
+
+    const shortestMove = possibleMoves[shortestMoveIndex];
+
+    currentOffset.set(shortestMove[0], { duration: 0 });
+    currentOffset.set(shortestMove[1]);
   };
 
   slideWidth.subscribe(() => updateOffsetFromCurrentSlide());
@@ -187,17 +183,6 @@
     }
 
     let offset = offsetBase + (moveBase - position);
-
-    if (loop) {
-      if (offset < 0 - $slidesInfo[0].width / 2) {
-        offset += $totalSize;
-      } else if (
-        offset >
-        $totalSize - $slidesInfo[$slidesInfo.length - 1].width / 2
-      ) {
-        offset -= $totalSize;
-      }
-    }
 
     currentOffset.set(offset, { duration: 0 });
   };
@@ -240,23 +225,28 @@
 
     isMoving = false;
 
-    // const wrappedOffset = wrapAround($currentOffset, 0, $totalSize);
-    const wrappedOffset = $currentOffset;
+    const speed = (offsetBase - $currentOffset) / moveTookS;
 
-    const speed = (offsetBase - wrappedOffset) / moveTookS;
+    const offset = $currentOffset;
+
     const startPositons = $slidesInfo.map((v) => v.offset);
 
     // Finding Closest slide to where we ended up
     let minIndex = 0;
     let minValue = Infinity;
+
     for (let i = 0; i < startPositons.length; i++) {
       const v = startPositons[i];
 
       // Because of looping we consider also slides in +-1 loops
       const minV = Math.min(
-        Math.abs(v - wrappedOffset),
-        Math.abs(v + $totalSize - wrappedOffset),
-        Math.abs(v - $totalSize - wrappedOffset)
+        Math.abs(v - offset),
+        ...($isLoop
+          ? [
+              Math.abs(v + $totalSize - offset),
+              Math.abs(v - $totalSize - offset),
+            ]
+          : [])
       );
       if (minV < (minValue || Infinity)) {
         minIndex = i;
@@ -264,11 +254,11 @@
       }
     }
 
-    changeSlideValueAndUpdate(minIndex);
+    const speedDirection = speed > 0 ? -1 : 1;
+    const speedModifirer =
+      minIndex === $currentSlide && Math.abs(speed) > 500 ? 1 : 0;
 
-    currentOffset.set(wrappedOffset, { duration: 0 });
-
-    updateOffsetFromCurrentSlide();
+    changeSlideValueAndUpdate(minIndex + speedDirection * speedModifirer);
 
     offsetBase = null;
     moveBase = null;
@@ -301,7 +291,7 @@
   setContext('microcarouselData', context);
 </script>
 
-{#if showDebug}
+{#if true}
   <div style="display: grid; grid-template-column: 1fr 1fr;">
     <span>currentSlide</span>
     <span> {$currentSlide}</span>

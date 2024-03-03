@@ -1,3 +1,5 @@
+import type { Writable } from 'svelte/store';
+import type { Tweened } from 'svelte/motion';
 export const wrapAround = (num: number, min: number, max: number) => {
   const range = max - min + 1;
   return ((((num - min) % range) + range) % range) + min;
@@ -5,6 +7,13 @@ export const wrapAround = (num: number, min: number, max: number) => {
 
 export const _clamp = (v: number, min: number, max: number) =>
   Math.max(min, Math.min(v, max));
+
+export type SlideInfo = {
+  offset: number;
+  start: number;
+  end: number;
+  width: number;
+};
 
 export type IContext = {
   slideWidth: Writable<number>;

@@ -1,19 +1,67 @@
 <script lang="ts">
+  import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    MoveButton,
+  } from './lib/index';
   import Counter from './counter.svelte';
-  import Carousel from './lib/carousel.svelte';
-  import CarouselContent from './lib/carouselContent.svelte';
-  import CarouselItem from './lib/carouselItem.svelte';
-  import MoveButton from './lib/moveButton.svelte';
 
-  const colors = ['red', 'green', 'blue', 'purple', 'yellow'];
+  const colors = ['red', 'green', 'blue', 'purple', 'yellow', 'orange', 'cyan'];
 </script>
 
 <main class="main">
-  <h2>Basic</h2>
+  <h1>Microcarousel — Super minimal svelte carousel.</h1>
+
+  <p>
+    Zero dependencies. Copy-Paste into any project that has Svelte and
+    Typesript.
+  </p>
+
+  <p>
+    This is more like a personal research project, I have 0 tests so there
+    probably are bugs. Use at your own risk.
+  </p>
+
+  <h3>Implemented features:</h3>
+
+  <ul>
+    <li>Basic carousel</li>
+    <li>Swipe left\right by n slides buttons</li>
+    <li>Any number of slides per view(including decimal, i.e 2.5)</li>
+  </ul>
+
+  <h3>Not implemented features:</h3>
+  <ul>
+    <li>RtL slider, vertical sliders.</li>
+    <li>Any special effects(parralax, different transitions transitions)</li>
+    <li>Auto scroll</li>
+  </ul>
+
+  <h3>Untested and likely to break</h3>
+  <ul>
+    <li>Slider in slider</li>
+    <li>Changing slide widths, adding slides without full remount</li>
+  </ul>
+
+  <h2>Examples:</h2>
+  <code style="white-space: pre;">
+    {`import { Carousel, CarouselContent, CarouselItem, MoveButton } from './lib/index';
+<Carousel>
+  <MoveButton moveNumber={-1} class="left">L</MoveButton>
+  <MoveButton moveNumber={1} class="right">R</MoveButton>
+  <CarouselContent>
+    {#each colors as c}
+      <CarouselItem>
+        <div class="slide" style="background: {c};"><Counter /></div>
+      </CarouselItem>
+    {/each}
+  </CarouselContent>
+</Carousel>`}
+  </code>
   <Carousel>
     <MoveButton moveNumber={-1} class="left">L</MoveButton>
     <MoveButton moveNumber={1} class="right">R</MoveButton>
-
     <CarouselContent>
       {#each colors as c}
         <CarouselItem>
@@ -23,8 +71,10 @@
     </CarouselContent>
   </Carousel>
 
-  <h2>slidesPerView 1.5 itemsGap 16</h2>
-  <Carousel itemsGap={16} slidesPerView={1.5}>
+  <code style="white-space: pre;">
+    {`<Carousel itemsGap={16} slidesPerView={3}>`}
+  </code>
+  <Carousel itemsGap={16} slidesPerView={3}>
     <MoveButton moveNumber={-1} class="left">L</MoveButton>
     <MoveButton moveNumber={1} class="right">R</MoveButton>
 
@@ -37,8 +87,10 @@
     </CarouselContent>
   </Carousel>
 
-  <h2>slidesPerView 1.5 itemsGap 16 centerSlide</h2>
-  <Carousel itemsGap={16} slidesPerView={1.5} centerSlide>
+  <code style="white-space: pre;">
+    {`<Carousel itemsGap={32} slidesPerView={1.5} centerSlide>`}
+  </code>
+  <Carousel itemsGap={32} slidesPerView={1.5} centerSlide>
     <MoveButton moveNumber={-1} class="left">L</MoveButton>
     <MoveButton moveNumber={1} class="right">R</MoveButton>
 
@@ -51,26 +103,40 @@
     </CarouselContent>
   </Carousel>
 
-  <div style="position: relative;">
-    <h2>Different slide width</h2>
-    <div>
-      <div class="ruler" />
-      <Carousel itemsGap={16} centerSlide>
-        <MoveButton moveNumber={-1} class="left">L</MoveButton>
-        <MoveButton moveNumber={1} class="right">R</MoveButton>
+  <code style="white-space: pre;">
+    {`<Carousel itemsGap={32} slidesPerView={1.5} centerSlide loop>`}
+  </code>
+  <p>
+    Note that looping requires at least two full screens of slides. So at least
+    2 slides for slidesPerView=1, at least 8 for slidesPerView=4 etc.
+  </p>
+  <Carousel itemsGap={32} slidesPerView={4} centerSlide loop>
+    <MoveButton moveNumber={-1} class="left">L</MoveButton>
+    <MoveButton moveNumber={1} class="right">R</MoveButton>
 
-        <CarouselContent>
-          {#each colors as c, i}
-            <CarouselItem maxWidth={100 * (i + 2)}>
-              <div class="slide" style="background: {c}; width: 100%;">
-                <Counter />
-              </div>
-            </CarouselItem>
-          {/each}
-        </CarouselContent>
-      </Carousel>
-    </div>
-  </div>
+    <CarouselContent>
+      {#each colors as c}
+        <CarouselItem>
+          <div class="slide" style="background: {c};"><Counter /></div>
+        </CarouselItem>
+      {/each}
+    </CarouselContent>
+  </Carousel>
+
+  <h2>Different slide width</h2>
+  <Carousel itemsGap={16} centerSlide>
+    <MoveButton moveNumber={-1} class="left">L</MoveButton>
+    <MoveButton moveNumber={1} class="right">R</MoveButton>
+    <CarouselContent>
+      {#each colors as c, i}
+        <CarouselItem maxWidth={100 * (i + 2)}>
+          <div class="slide" style="background: {c}; width: 100%;">
+            <Counter />
+          </div>
+        </CarouselItem>
+      {/each}
+    </CarouselContent>
+  </Carousel>
 </main>
 
 <style scoped>

@@ -2,7 +2,7 @@
   import { getContext, onDestroy, onMount } from 'svelte';
 
   import style from './style.module.css';
-  import type { IContext } from './helpers';
+  import { wrapAround, type IContext } from './helpers';
 
   export let maxWidth = Infinity;
 
@@ -21,6 +21,7 @@
     slidesInfo,
     slidesMaxWidth,
     totalSize,
+    isLoop,
   } = ctx as IContext;
 
   totalSlides.set($totalSlides + 1);
@@ -59,14 +60,15 @@
   $: isLeftSide = $currentOffset + $carouselWidth < $totalSize / 2;
 
   $: amIOnLeftSide = $slidesInfo[myIndex]
-    ? $slidesInfo[myIndex].start < $totalSize / 2
+    ? $slidesInfo[myIndex].offset < $totalSize / 2
     : false;
 
-  $: amIVisible =
-    $slidesInfo && $slidesInfo[myIndex]
-      ? $currentOffset >= $slidesInfo[myIndex].start &&
-        $currentOffset <= $slidesInfo[myIndex].end
-      : true;
+  $: wrappedOffset = wrapAround($currentOffset, 0, $totalSize);
+
+  $: amIVisible = $slidesInfo[myIndex]
+    ? $currentOffset >= $slidesInfo[myIndex].start &&
+      $currentOffset <= $slidesInfo[myIndex].end
+    : true;
 
   $: moveStyle = `transform: translateX(${
     isLeftSide !== amIOnLeftSide ? (isLeftSide ? -$totalSize : $totalSize) : 0
@@ -76,9 +78,12 @@
 <div
   bind:this={myRef}
   class={style.carouselItem}
-  style="oveflow: hidden; {widthStyle} {amIVisible ? '' : moveStyle}"
+  style="oveflow: hidden; {widthStyle} {amIVisible || !$isLoop
+    ? ''
+    : moveStyle}"
 >
-  {Math.round($currentOffset)}
-  {JSON.stringify($slidesInfo[myIndex])}
+  <div style="font-size: 8px">
+    {JSON.stringify($slidesInfo[myIndex])}
+  </div>
   <slot />
 </div>
