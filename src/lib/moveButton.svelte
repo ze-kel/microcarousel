@@ -1,8 +1,5 @@
 <script lang="ts">
   import { getContext } from 'svelte';
-  import style from './style.module.css';
-  import cls from 'classnames';
-  import type { Writable } from 'svelte/store';
   import type { IContext } from './helpers';
 
   const ctx = getContext('microcarouselData');
@@ -24,7 +21,7 @@
 </script>
 
 <button
-  class={cls(style.moveButton, $$props.class)}
+  class={$$props.class}
   style={$$props.style}
   disabled={idDisabled}
   on:click={() => changeSlideValueAndUpdate($currentSlide + moveNumber)}

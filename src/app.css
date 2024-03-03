@@ -23,15 +23,17 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  padding: 32px 16px;
 }
 
 code {
   display: block;
   white-space: pre;
+  overflow-x: scroll;
   background-color: rgb(45, 45, 45);
   padding: 16px;
 }
 
-code:not(:first-child) {
+.examples > h3:not(:first-child) {
   margin-top: 64px;
 }

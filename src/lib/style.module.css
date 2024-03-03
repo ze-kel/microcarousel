@@ -5,15 +5,6 @@
   position: relative;
 }
 
-.carouselContentInner {
-  position: relative;
-}
-
-.carouselContentInner {
-  display: flex;
-}
-
 .carouselItem {
-  width: 100%;
   flex-shrink: 0;
 }

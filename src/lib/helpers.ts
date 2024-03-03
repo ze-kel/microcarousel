@@ -28,7 +28,7 @@ export type IContext = {
   touchStartHandler: (e: TouchEvent) => void;
   touchMoveHandler: (e: TouchEvent) => void;
   totalSlides: Writable<number>;
-  slidesMaxWidth: Writable<number[]>;
+  slidesMaxWidth: Writable<Array<number | null>>;
   slidesPerView: number;
   carouselWidth: Writable<number | null>;
   isLoop: Writable<boolean>;

@@ -1,5 +1,5 @@
 <script>
-  let v = 0;
+  let v = 0
 </script>
 
 <div>

@@ -1,243 +1,259 @@
 <script lang="ts">
-  import { onMount, setContext, tick } from 'svelte';
-  import style from './style.module.css';
-  import { writable } from 'svelte/store';
-  import { tweened } from 'svelte/motion';
-  import { cubicOut } from 'svelte/easing';
-  import { _clamp, wrapAround, type IContext, type SlideInfo } from './helpers';
+  import { createEventDispatcher, onMount, setContext, tick } from "svelte"
+  import { writable } from "svelte/store"
+  import { tweened } from "svelte/motion"
+  import { cubicOut } from "svelte/easing"
+  import { _clamp, wrapAround, type IContext, type SlideInfo } from "./helpers"
 
-  const TRANSITION_MS = 300;
+  const dispatch = createEventDispatcher()
 
-  export let showDebug = false;
-  export let itemsGap = 0;
-  export let slidesPerView = 1;
-  export let centerSlide = false;
-  export let fadeOnMount = true;
-  export let loop = false;
+  const TRANSITION_MS = 300
 
-  let isMounted = !fadeOnMount;
+  export let showDebug = false
+  export let itemsGap = 0
+  export let slidesPerView = 1
+  export let centerSlide = false
+  export let fadeOnMount = true
+  export let loop = false
 
-  onMount(async () => {
-    isMounted = true;
-  });
+  export let slide = 0
+
+  let isMounted = !fadeOnMount
 
   // Refs
-  let carouselRef: HTMLElement;
+  let carouselRef: HTMLElement
 
   // Context values
   // Index of current slide
-  const currentSlide = writable(0);
+  const currentSlide = writable(0)
   // Total number of slides.
-  const totalSlides = writable(0);
+  const totalSlides = writable(0)
   // Wrap these in writeable because I pass them to context
-  const isLoop = writable(loop);
-  const gap = writable(itemsGap);
+  const isLoop = writable(loop)
+  const gap = writable(itemsGap)
   // MaxWidth value from all carouselItem-s
-  const slidesMaxWidth = writable<number[]>([]);
-  $: gap.set(itemsGap);
+  const slidesMaxWidth: (typeof context)["slidesMaxWidth"] = writable([])
+  $: gap.set(itemsGap)
   // Width of our carousel(space on a page it occupies, not total size of all items)
-  const carouselWidth = writable<number | null>(null);
+  const carouselWidth = writable<number | null>(null)
+
+  currentSlide.subscribe((v) => {
+    dispatch("change", v)
+  })
 
   onMount(() => {
     const getW = () => {
-      if (!carouselRef) return;
-      const { width } = carouselRef.getBoundingClientRect();
-      carouselWidth.set(width);
-    };
-    getW();
-    window.addEventListener('resize', getW);
-  });
+      if (!carouselRef) return
+      const { width } = carouselRef.getBoundingClientRect()
+      carouselWidth.set(width)
+    }
+    getW()
+    window.addEventListener("resize", getW)
+  })
 
   // Desired slide width according to slidesPerView. Actual width = min(slideWidth, maxWidth from carouselItem)
-  const slideWidth = writable<number>();
+  const slideWidth = writable<number>()
 
   const updateSlideWidth = () => {
-    if (!$carouselWidth) return;
-    const gaps = itemsGap * (Math.ceil(slidesPerView) - 1);
-    slideWidth.set(($carouselWidth - gaps) / slidesPerView);
-  };
+    if (!$carouselWidth) return
+    const gaps = itemsGap * (Math.ceil(slidesPerView) - 1)
+    slideWidth.set(($carouselWidth - gaps) / slidesPerView)
+  }
 
-  carouselWidth.subscribe(updateSlideWidth);
+  carouselWidth.subscribe(updateSlideWidth)
 
   // Calculates info about start\end(in offset values and width
-  const slidesInfo = writable<SlideInfo[]>([]);
+  const slidesInfo = writable<SlideInfo[]>([])
   const calculateSlideInfo = () => {
-    if (typeof $carouselWidth !== 'number' || !slideWidth) return [];
+    if (typeof $carouselWidth !== "number" || !slideWidth) return []
 
-    let acc = 0;
-    const si = [];
+    let acc = 0
+    const si = []
 
-    const sw = $slidesMaxWidth;
+    const sw = $slidesMaxWidth
     for (let i = 0; i < $totalSlides; i++) {
-      const currentSlideWidthMax = typeof sw[i] === 'number' ? sw[i] : Infinity;
-      const slideW = Math.floor(Math.min(currentSlideWidthMax, $slideWidth));
+      const slideW = Math.floor(Math.min(sw[i] || Infinity, $slideWidth))
 
-      let offset = acc;
-      let start = offset - $carouselWidth;
-      let end = start + slideW + $carouselWidth;
+      let offset = acc
+      let start = offset - $carouselWidth
+      let end = start + slideW + $carouselWidth
 
       // If slides are centered then we account for that
       if (centerSlide) {
-        offset = offset - ($carouselWidth - slideW) / 2;
+        offset = offset - ($carouselWidth - slideW) / 2
       }
 
-      si.push({ start: start, offset, width: slideW, end });
-      acc += slideW + $gap;
+      si.push({ start: start, offset, width: slideW, end })
+      acc += slideW + $gap
     }
 
-    slidesInfo.set(si);
-  };
+    slidesInfo.set(si)
+  }
 
-  slideWidth.subscribe(calculateSlideInfo);
-  slidesMaxWidth.subscribe(calculateSlideInfo);
-  carouselWidth.subscribe(calculateSlideInfo);
+  slideWidth.subscribe(calculateSlideInfo)
+  slidesMaxWidth.subscribe(calculateSlideInfo)
+  carouselWidth.subscribe(calculateSlideInfo)
 
   // Total size of content. All slides width and combined
-  const totalSize = writable(0);
+  const totalSize = writable(0)
   slidesInfo.subscribe((v) => {
     if (v.length) {
+      const lastItem = v[v.length - 1]
+      const firstItem = v[0]
+
       totalSize.set(
-        v[v.length - 1].offset + v[v.length - 1].width - v[0].offset + $gap
-      );
+        lastItem.offset +
+          ($isLoop ? lastItem.width / 2 : lastItem.width) -
+          ($isLoop
+            ? firstItem.offset - firstItem.width / 2
+            : firstItem.offset) +
+          $gap
+      )
     }
-  });
+  })
 
   // Set slide to slide with index n
   const changeSlideValueAndUpdate = async (n: number) => {
-    const clamped = _clamp(n, 0, $totalSlides - 1);
+    const clamped = _clamp(n, 0, $totalSlides - 1)
 
     if (!$isLoop || clamped === n) {
-      currentSlide.set(clamped);
+      currentSlide.set(clamped)
     } else {
       // Case where we want to set slide to -1 or +1 from the end
-      const wrapped = wrapAround(n, 0, $totalSlides - 1);
-      currentSlide.set(wrapped);
+      const wrapped = wrapAround(n, 0, $totalSlides - 1)
+      currentSlide.set(wrapped)
     }
-    updateOffsetFromCurrentSlide(false);
-  };
+    updateOffsetFromCurrentSlide(false)
+  }
+
+  $: changeSlideValueAndUpdate(slide)
 
   // Number of pixels we move out slides
-  const currentOffset = tweened<number>(0, {
+  const currentOffset = tweened<number>(undefined, {
     easing: cubicOut,
     duration: TRANSITION_MS,
-  });
+  })
+
+  const activateUnsubscribe = currentOffset.subscribe(async (v) => {
+    if (typeof v === "number" && !Number.isNaN(v)) {
+      isMounted = true
+      activateUnsubscribe()
+    }
+  })
 
   const updateOffsetFromCurrentSlide = (immeditate?: boolean) => {
-    if (!$slidesInfo.length) return;
+    if (!$slidesInfo.length) return
 
     // Again we wrap "fake" slides to real ones
-    const wrapped = wrapAround($currentSlide, 0, $totalSlides - 1);
+    const wrapped = wrapAround($currentSlide, 0, $totalSlides - 1)
 
-    const current = $currentOffset;
-    const target = $slidesInfo[wrapped].offset;
+    const current = $currentOffset
+    const target = $slidesInfo[wrapped].offset
 
     if (immeditate) {
-      currentOffset.set(target, { duration: 0 });
+      currentOffset.set(target, { duration: 0 })
     }
 
-    // Direct, through 0, through $totalSize
+    if (!isLoop) {
+      currentOffset.set(target)
+      return
+    }
+
+    // Direct, from looped ones
     const possibleMoves = [
       [current, target],
-      [wrapAround(current, 0, $totalSize), target],
-      [0 - ($totalSize - current), target],
-    ];
+      [current + $totalSize, target],
+      [current - $totalSize, target],
+    ]
 
     const shortestMoveIndex = possibleMoves.reduce((a, b, index, arr) => {
-      const aR = Math.abs(arr[a][0] - arr[a][1]);
-      const bR = Math.abs(arr[index][0] - arr[index][1]);
-      return aR < bR ? a : index;
-    }, 0);
+      const aR = Math.abs(arr[a][0] - arr[a][1])
+      const bR = Math.abs(arr[index][0] - arr[index][1])
+      return aR < bR ? a : index
+    }, 0)
 
-    const shortestMove = possibleMoves[shortestMoveIndex];
+    const shortestMove = possibleMoves[shortestMoveIndex]
 
-    currentOffset.set(shortestMove[0], { duration: 0 });
-    currentOffset.set(shortestMove[1]);
-  };
+    currentOffset.set(shortestMove[0], { duration: 0 })
+    currentOffset.set(shortestMove[1])
+  }
 
-  slideWidth.subscribe(() => updateOffsetFromCurrentSlide());
-  slidesInfo.subscribe(() => updateOffsetFromCurrentSlide());
+  slideWidth.subscribe(() => updateOffsetFromCurrentSlide())
+  slidesInfo.subscribe(() => updateOffsetFromCurrentSlide())
 
   // Moving Handlers
-  let isMoving = false;
-  let offsetBase: number | null = null;
-  let moveBase: number | null = null;
-  let moveStartTime: Date | null = null;
+  let isMoving = false
+  let offsetBase: number | null = null
+  let moveBase: number | null = null
+  let moveStartTime: Date | null = null
+  let moveHanderCalls = 0
 
   const moveStart = (position: number) => {
-    isMoving = true;
-    offsetBase = $currentOffset;
-    moveBase = position;
-    moveStartTime = new Date();
-  };
+    isMoving = true
+    offsetBase = $currentOffset
+    moveBase = position
+    moveHanderCalls = 0
+    moveStartTime = new Date()
+  }
 
   const moveHandler = (position: number) => {
     if (
-      typeof offsetBase !== 'number' ||
-      typeof moveBase !== 'number' ||
-      typeof $carouselWidth !== 'number'
+      typeof offsetBase !== "number" ||
+      typeof moveBase !== "number" ||
+      typeof $carouselWidth !== "number"
     ) {
       console.error(
-        'Move handler called without offsetbase or movebase or carouselWidth'
-      );
-      return;
+        "Move handler called without offsetbase or movebase or carouselWidth"
+      )
+      return
     }
+    moveHanderCalls++
 
-    let offset = offsetBase + (moveBase - position);
+    let offset = offsetBase + (moveBase - position)
 
-    currentOffset.set(offset, { duration: 0 });
-  };
-
-  const mouseDownHandler = (e: MouseEvent) => {
-    e.preventDefault();
-    moveStart(e.clientX);
-  };
-
-  const mouseMoveHandler = (e: MouseEvent) => {
-    if (!isMoving) return;
-    e.preventDefault();
-    moveHandler(e.clientX);
-  };
-
-  const touchStartHandler = (e: TouchEvent) => {
-    const first = e.touches[0];
-    moveStart(first.clientX);
-  };
-
-  const touchMoveHandler = (e: TouchEvent) => {
-    if (!isMoving) return;
-    e.preventDefault();
-    const first = e.touches[0];
-    moveHandler(first.clientX);
-  };
+    currentOffset.set(offset, { duration: 0 })
+  }
 
   const finishMove = (e: Event) => {
-    if (!isMoving) return;
-    e.preventDefault();
-    e.stopPropagation();
+    if (!isMoving) return
 
-    if (typeof moveStartTime !== 'object' || typeof offsetBase !== 'number') {
-      console.error('finishMove called without offsetbase or moveStartTime');
-      return;
+    if (
+      typeof moveStartTime !== "object" ||
+      typeof offsetBase !== "number" ||
+      typeof $carouselWidth !== "number"
+    ) {
+      console.error(
+        "finishMove called without offsetbase, moveStartTime or carouselWidth"
+      )
+      return
     }
 
-    const finishTime = new Date();
-    const moveTookS = (Number(finishTime) - Number(moveStartTime)) / 1000;
+    isMoving = false
 
-    isMoving = false;
+    const finishTime = new Date()
+    const moveTookS = (Number(finishTime) - Number(moveStartTime)) / 1000
 
-    const speed = (offsetBase - $currentOffset) / moveTookS;
+    if (moveHanderCalls < 1 || moveTookS < 0.05) {
+      offsetBase = null
+      moveBase = null
+      moveStartTime = null
+      updateOffsetFromCurrentSlide()
+      return
+    }
 
-    const offset = $currentOffset;
+    const travel = offsetBase - $currentOffset
+    const speed = travel / moveTookS
 
-    const startPositons = $slidesInfo.map((v) => v.offset);
+    const offset = $currentOffset
+
+    const startPositons = $slidesInfo.map((v) => v.offset)
 
     // Finding Closest slide to where we ended up
-    let minIndex = 0;
-    let minValue = Infinity;
+    let minIndex = 0
+    let minValue = Infinity
 
     for (let i = 0; i < startPositons.length; i++) {
-      const v = startPositons[i];
-
+      const v = startPositons[i]
       // Because of looping we consider also slides in +-1 loops
       const minV = Math.min(
         Math.abs(v - offset),
@@ -247,23 +263,50 @@
               Math.abs(v - $totalSize - offset),
             ]
           : [])
-      );
-      if (minV < (minValue || Infinity)) {
-        minIndex = i;
-        minValue = minV;
+      )
+
+      if (minV < minValue) {
+        minIndex = i
+        minValue = minV
       }
     }
 
-    const speedDirection = speed > 0 ? -1 : 1;
+    // Inertia fakery. A short and fast swipe can move to next slide, kind of like on mobile.
+    // Though it should not be too short to prevent accidental triggers
+    const speedDirection = speed > 0 ? -1 : 1
     const speedModifirer =
-      minIndex === $currentSlide && Math.abs(speed) > 500 ? 1 : 0;
+      minIndex === $currentSlide &&
+      Math.abs(speed) > 500 &&
+      Math.abs(travel) > Math.min($carouselWidth / 4, 75)
+        ? 1
+        : 0
 
-    changeSlideValueAndUpdate(minIndex + speedDirection * speedModifirer);
+    changeSlideValueAndUpdate(minIndex + speedDirection * speedModifirer)
 
-    offsetBase = null;
-    moveBase = null;
-    moveStartTime = null;
-  };
+    offsetBase = null
+    moveBase = null
+    moveStartTime = null
+  }
+
+  const mouseDownHandler = (e: MouseEvent) => {
+    moveStart(e.clientX)
+  }
+
+  const mouseMoveHandler = (e: MouseEvent) => {
+    if (!isMoving) return
+    moveHandler(e.clientX)
+  }
+
+  const touchStartHandler = (e: TouchEvent) => {
+    const first = e.touches[0]
+    moveStart(first.clientX)
+  }
+
+  const touchMoveHandler = (e: TouchEvent) => {
+    if (!isMoving) return
+    const first = e.touches[0]
+    moveHandler(first.clientX)
+  }
 
   const context: IContext = {
     slideWidth,
@@ -285,13 +328,13 @@
     isLoop,
     slidesInfo,
     totalSize,
-  };
+  }
 
   // Context provide
-  setContext('microcarouselData', context);
+  setContext("microcarouselData", context)
 </script>
 
-{#if true}
+{#if showDebug}
   <div style="display: grid; grid-template-column: 1fr 1fr;">
     <span>currentSlide</span>
     <span> {$currentSlide}</span>
@@ -303,14 +346,16 @@
     <span> carouselwidth</span> <span>{$carouselWidth}</span>
 
     {$totalSize}
-
-    <span>{JSON.stringify($slidesInfo)}</span>
   </div>
 {/if}
 <div
   bind:this={carouselRef}
-  class={style.carousel}
-  style="opacity: {isMounted ? 1 : 0};"
+  style="opacity: {isMounted ? 1 : 0};  
+  width: 100%;
+  overflow: hidden;
+  transition: opacity 0.3s ease-out;
+  position: relative;
+  touch-action: pan-y;"
 >
   <slot />
 </div>

@@ -1,15 +1,14 @@
 <script lang="ts">
-  import { getContext, onDestroy, onMount } from 'svelte';
+  import { getContext, onDestroy, onMount } from "svelte"
 
-  import style from './style.module.css';
-  import { wrapAround, type IContext } from './helpers';
+  import { type IContext } from "./helpers"
 
-  export let maxWidth = Infinity;
+  export let maxWidth = Infinity
 
-  const ctx = getContext('microcarouselData');
+  const ctx = getContext("microcarouselData")
 
   if (!ctx) {
-    console.error('ERROR: <CarouselItem> Must be a child of <Carousel>');
+    console.error("ERROR: <CarouselItem> Must be a child of <Carousel>")
   }
 
   const {
@@ -22,68 +21,91 @@
     slidesMaxWidth,
     totalSize,
     isLoop,
-  } = ctx as IContext;
+    currentSlide,
+  } = ctx as IContext
 
-  totalSlides.set($totalSlides + 1);
+  totalSlides.set($totalSlides + 1)
 
-  let myRef: HTMLElement;
+  let myRef: HTMLElement
 
-  let myIndex: number;
+  let myIndex: number
 
   const getW = () => {
-    if (!myRef || !myRef.parentNode) return;
-    const myIndex = Array.from(myRef.parentNode.children).indexOf(myRef);
-    $slidesMaxWidth[myIndex] = maxWidth ? maxWidth : null;
-  };
+    if (!myRef || !myRef.parentNode) return
+    const myIndex = Array.from(myRef.parentNode.children).indexOf(myRef)
+    $slidesMaxWidth[myIndex] = maxWidth ? maxWidth : null
+  }
+
+  const widthUpdater = (w: number) => {
+    slidesMaxWidth.update((v) => {
+      const n = [...v]
+      n[myIndex] = w ? w : null
+      return n
+    })
+  }
+
+  $: widthUpdater(maxWidth)
 
   onMount(() => {
-    getW();
-    addEventListener('resize', getW);
+    getW()
+    addEventListener("resize", getW)
 
-    if (!myRef || !myRef.parentNode) return;
-    myIndex = Array.from(myRef.parentNode.children).indexOf(myRef);
-  });
+    if (!myRef || !myRef.parentNode) return
+    myIndex = Array.from(myRef.parentNode.children).indexOf(myRef)
+  })
 
   onDestroy(() => {
-    removeEventListener('resize', getW);
-    const old = $slidesMaxWidth;
+    removeEventListener("resize", getW)
+    const old = $slidesMaxWidth
 
-    old.splice(myIndex, 0);
-    $slidesMaxWidth = old;
-    totalSlides.set($totalSlides - 1);
-  });
+    old.splice(myIndex, 0)
+    $slidesMaxWidth = old
+    totalSlides.set($totalSlides - 1)
+  })
 
   $: widthStyle = $slideWidth
     ? `width:${Math.min($slideWidth, maxWidth)}px;`
-    : '';
+    : "width: 100%;"
 
-  $: isLeftSide = $currentOffset + $carouselWidth < $totalSize / 2;
+  let visibleReal = true
+  let visibleMinusLoop = false
+  let visiblePlusLoop = true
 
-  $: amIOnLeftSide = $slidesInfo[myIndex]
-    ? $slidesInfo[myIndex].offset < $totalSize / 2
-    : false;
+  const computeVisibility = () => {
+    if (!$slidesInfo[myIndex]) return
+    const { start, end } = $slidesInfo[myIndex]
 
-  $: wrappedOffset = wrapAround($currentOffset, 0, $totalSize);
+    const off = $currentOffset
 
-  $: amIVisible = $slidesInfo[myIndex]
-    ? $currentOffset >= $slidesInfo[myIndex].start &&
-      $currentOffset <= $slidesInfo[myIndex].end
-    : true;
+    visibleReal = off >= start && off <= end
+    visibleMinusLoop = off >= start - $totalSize && off <= end - $totalSize
+    visiblePlusLoop = off >= start + $totalSize && off <= end + $totalSize
+  }
 
-  $: moveStyle = `transform: translateX(${
-    isLeftSide !== amIOnLeftSide ? (isLeftSide ? -$totalSize : $totalSize) : 0
-  }px);`;
+  slidesInfo.subscribe(computeVisibility)
+  currentOffset.subscribe(computeVisibility)
+  totalSize.subscribe(computeVisibility)
+
+  $: moveNumber = visibleReal
+    ? 0
+    : visiblePlusLoop
+    ? $totalSize
+    : visibleMinusLoop
+    ? -$totalSize
+    : 0
+
+  $: moveStyle = `transform: translateX(${moveNumber}px);`
 </script>
 
 <div
+  class={$$props.class}
   bind:this={myRef}
-  class={style.carouselItem}
-  style="oveflow: hidden; {widthStyle} {amIVisible || !$isLoop
+  style="flex-shink: 0; oveflow: hidden; {widthStyle} {!$isLoop
     ? ''
     : moveStyle}"
+  data-slide
+  data-slide-index={myIndex}
+  data-current-slide={myIndex === $currentSlide}
 >
-  <div style="font-size: 8px">
-    {JSON.stringify($slidesInfo[myIndex])}
-  </div>
   <slot />
 </div>
