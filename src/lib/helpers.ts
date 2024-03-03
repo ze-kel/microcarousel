@@ -10,7 +10,6 @@ export type IContext = {
   slideWidth: Writable<number>;
   currentSlide: Writable<number>;
   currentOffset: Tweened<number>;
-  moveSlide: (nSlides: number) => void;
   gap: Writable<number>;
   mouseDownHandler: (e: MouseEvent) => void;
   mouseUpHandler: (e: Event) => void;
@@ -26,4 +25,5 @@ export type IContext = {
   isLoop: Writable<boolean>;
   slidesInfo: Writable<SlideInfo[]>;
   totalSize: Writable<number>;
+  changeSlideValueAndUpdate: (n: number) => Promise<void>;
 };

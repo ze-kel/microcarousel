@@ -11,7 +11,8 @@
     console.error('ERROR: <MoveButton> Must be a child of <Carousel>');
   }
 
-  const { moveSlide, currentSlide, totalSlides, isLoop } = ctx as IContext;
+  const { changeSlideValueAndUpdate, currentSlide, totalSlides, isLoop } =
+    ctx as IContext;
 
   export let moveNumber: number;
 
@@ -26,7 +27,7 @@
   class={cls(style.moveButton, $$props.class)}
   style={$$props.style}
   disabled={idDisabled}
-  on:click={() => moveSlide(moveNumber)}
+  on:click={() => changeSlideValueAndUpdate($currentSlide + moveNumber)}
 >
   <slot />
 </button>

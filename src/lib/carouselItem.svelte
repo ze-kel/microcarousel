@@ -58,11 +58,13 @@
 
   $: isLeftSide = $currentOffset + $carouselWidth < $totalSize / 2;
 
-  $: amIOnLeftSide = myIndex < $totalSlides / 2;
+  $: amIOnLeftSide = $slidesInfo[myIndex]
+    ? $slidesInfo[myIndex].start < $totalSize / 2
+    : false;
 
   $: amIVisible =
     $slidesInfo && $slidesInfo[myIndex]
-      ? $currentOffset + $carouselWidth >= $slidesInfo[myIndex].start &&
+      ? $currentOffset >= $slidesInfo[myIndex].start &&
         $currentOffset <= $slidesInfo[myIndex].end
       : true;
 
@@ -76,8 +78,7 @@
   class={style.carouselItem}
   style="oveflow: hidden; {widthStyle} {amIVisible ? '' : moveStyle}"
 >
-  {$totalSize}
-  {isLeftSide}
-  {amIVisible}
+  {Math.round($currentOffset)}
+  {JSON.stringify($slidesInfo[myIndex])}
   <slot />
 </div>
