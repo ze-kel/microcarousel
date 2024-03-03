@@ -3,7 +3,13 @@
   import { writable } from "svelte/store"
   import { tweened } from "svelte/motion"
   import { cubicOut } from "svelte/easing"
-  import { _clamp, wrapAround, type IContext, type SlideInfo } from "./helpers"
+  import {
+    _clamp,
+    wrapAround,
+    type IContext,
+    type SlideInfo,
+    contextName,
+  } from "./helpers"
 
   const dispatch = createEventDispatcher()
 
@@ -141,7 +147,7 @@
     }
   })
 
-  const updateOffsetFromCurrentSlide = (immeditate?: boolean) => {
+  const updateOffsetFromCurrentSlide = (immediate?: boolean) => {
     if (!$slidesInfo.length) return
 
     // Again we wrap "fake" slides to real ones
@@ -150,7 +156,7 @@
     const current = $currentOffset
     const target = $slidesInfo[wrapped].offset
 
-    if (immeditate) {
+    if (immediate) {
       currentOffset.set(target, { duration: 0 })
     }
 
@@ -186,13 +192,13 @@
   let offsetBase: number | null = null
   let moveBase: number | null = null
   let moveStartTime: Date | null = null
-  let moveHanderCalls = 0
+  let moveHandlerCalls = 0
 
   const moveStart = (position: number) => {
     isMoving = true
     offsetBase = $currentOffset
     moveBase = position
-    moveHanderCalls = 0
+    moveHandlerCalls = 0
     moveStartTime = new Date()
   }
 
@@ -207,7 +213,7 @@
       )
       return
     }
-    moveHanderCalls++
+    moveHandlerCalls++
 
     let offset = offsetBase + (moveBase - position)
 
@@ -233,7 +239,7 @@
     const finishTime = new Date()
     const moveTookS = (Number(finishTime) - Number(moveStartTime)) / 1000
 
-    if (moveHanderCalls < 1 || moveTookS < 0.05) {
+    if (moveHandlerCalls < 1 || moveTookS < 0.05) {
       offsetBase = null
       moveBase = null
       moveStartTime = null
@@ -246,14 +252,14 @@
 
     const offset = $currentOffset
 
-    const startPositons = $slidesInfo.map((v) => v.offset)
+    const startPositions = $slidesInfo.map((v) => v.offset)
 
     // Finding Closest slide to where we ended up
     let minIndex = 0
     let minValue = Infinity
 
-    for (let i = 0; i < startPositons.length; i++) {
-      const v = startPositons[i]
+    for (let i = 0; i < startPositions.length; i++) {
+      const v = startPositions[i]
       // Because of looping we consider also slides in +-1 loops
       const minV = Math.min(
         Math.abs(v - offset),
@@ -274,14 +280,14 @@
     // Inertia fakery. A short and fast swipe can move to next slide, kind of like on mobile.
     // Though it should not be too short to prevent accidental triggers
     const speedDirection = speed > 0 ? -1 : 1
-    const speedModifirer =
+    const speedModifier =
       minIndex === $currentSlide &&
       Math.abs(speed) > 500 &&
       Math.abs(travel) > Math.min($carouselWidth / 4, 75)
         ? 1
         : 0
 
-    changeSlideValueAndUpdate(minIndex + speedDirection * speedModifirer)
+    changeSlideValueAndUpdate(minIndex + speedDirection * speedModifier)
 
     offsetBase = null
     moveBase = null
@@ -331,23 +337,9 @@
   }
 
   // Context provide
-  setContext("microcarouselData", context)
+  setContext(contextName, context)
 </script>
 
-{#if showDebug}
-  <div style="display: grid; grid-template-column: 1fr 1fr;">
-    <span>currentSlide</span>
-    <span> {$currentSlide}</span>
-    <span> currentOffset </span>
-    <span> {$currentOffset}</span>
-    <span>slidewidth</span>
-    <span>{$slideWidth}</span>
-
-    <span> carouselwidth</span> <span>{$carouselWidth}</span>
-
-    {$totalSize}
-  </div>
-{/if}
 <div
   bind:this={carouselRef}
   style="opacity: {isMounted ? 1 : 0};  

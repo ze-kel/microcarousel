@@ -41,7 +41,7 @@
 
   <p>
     Zero dependencies. Copy-Paste into any project that has Svelte and
-    Typesript.
+    Typescript.
   </p>
 
   <p>
@@ -63,7 +63,7 @@
   <h3>Not implemented features:</h3>
   <ul>
     <li>RtL slider, vertical sliders.</li>
-    <li>Any special effects(parralax, different transitions transitions)</li>
+    <li>Any special effects(parallax, different transitions transitions)</li>
     <li>Auto scroll</li>
   </ul>
 
@@ -253,7 +253,7 @@
     <h2>Controlled externally</h2>
     <p>
       You can pass negative or overflowing values: -1 becomes last slide, and so
-      on. Change event with correct value will be fired immediatelly too.
+      on. Change event with correct value will be fired immediately too.
     </p>
     <code style="white-space: pre; margin-bottom: 5px">
       {`<input type="number" bind:value={controlled} />

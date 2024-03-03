@@ -1,11 +1,11 @@
 <script lang="ts">
   import { getContext, onDestroy, onMount } from "svelte"
 
-  import { type IContext } from "./helpers"
+  import { contextName, type IContext } from "./helpers"
 
   export let maxWidth = Infinity
 
-  const ctx = getContext("microcarouselData")
+  const ctx = getContext(contextName)
 
   if (!ctx) {
     console.error("ERROR: <CarouselItem> Must be a child of <Carousel>")
@@ -100,7 +100,7 @@
 <div
   class={$$props.class}
   bind:this={myRef}
-  style="flex-shink: 0; oveflow: hidden; {widthStyle} {!$isLoop
+  style="flex-shrink: 0; overflow: hidden; {widthStyle} {!$isLoop
     ? ''
     : moveStyle}"
   data-slide

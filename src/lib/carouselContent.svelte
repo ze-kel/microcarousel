@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getContext } from "svelte"
-  import type { IContext } from "./helpers"
-  const ctx = getContext("microcarouselData")
+  import { contextName, type IContext } from "./helpers"
+  const ctx = getContext(contextName)
 
   if (!ctx) {
     console.error("ERROR: <CarouselContent> Must be a child of <Carousel>")

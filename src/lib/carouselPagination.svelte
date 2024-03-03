@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { getContext, onDestroy, onMount } from "svelte"
+  import { getContext } from "svelte"
 
-  import { type IContext } from "./helpers"
+  import { contextName, type IContext } from "./helpers"
 
-  const ctx = getContext("microcarouselData")
+  const ctx = getContext(contextName)
 
   if (!ctx) {
     console.error("ERROR: <CarouselItem> Must be a child of <Carousel>")
