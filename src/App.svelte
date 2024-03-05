@@ -164,8 +164,8 @@
 
     <h2>Slides with different widths</h2>
     <p>
-      Max-width is set on component. This is easier to handle constant
-      getBoundingClientRect calls.<br /> Breakpoints handling is up to you, all width
+      Max-width is set on component. This is easier to handle without constant
+      getBoundingClientRect calls.<br /> Breakpoint handling is up to you, all width
       changes will trigger recalculation
     </p>
     <p>
