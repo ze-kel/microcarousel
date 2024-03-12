@@ -14,8 +14,6 @@
   const {
     slideWidth,
     totalSlides,
-    carouselWidth,
-    gap,
     currentOffset,
     slidesInfo,
     slidesMaxWidth,
@@ -69,7 +67,7 @@
 
   let visibleReal = true
   let visibleMinusLoop = false
-  let visiblePlusLoop = true
+  let visiblePlusLoop = false
 
   const computeVisibility = () => {
     if (!$slidesInfo[myIndex]) return

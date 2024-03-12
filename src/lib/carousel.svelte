@@ -15,7 +15,6 @@
 
   const TRANSITION_MS = 300
 
-  export let showDebug = false
   export let itemsGap = 0
   export let slidesPerView = 1
   export let centerSlide = false
